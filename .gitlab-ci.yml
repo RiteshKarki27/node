@@ -71,9 +71,7 @@ prepare:docker:
     TARGET: dev
   parallel:
     matrix:
-      - DISTRO: [debian, rocky]
-      - DISTRO: ubuntu
-        CMAKE_EXTRA_OPTS: "-DVILLAS_COMPILE_WARNING_AS_ERROR=OFF"
+      - DISTRO: [ubuntu, debian, rocky]
       - DISTRO: fedora
         DOCKER_OPTS: --tag ${DOCKER_IMAGE}/dev:${DOCKER_TAG}
       - DISTRO: fedora
@@ -102,9 +100,12 @@ build:source:
     CMAKE: cmake
   parallel:
     matrix:
-      - DISTRO: [fedora, fedora-minimal, debian, rocky, ubuntu]
+      - DISTRO: [fedora, fedora-minimal, debian, rocky]
+      - DISTRO: ubuntu
+        CMAKE_EXTRA_OPTS: |
+          -DVILLAS_COMPILE_WARNING_AS_ERROR=OFF
       - DISTRO: fedora-minimal
-        CMAKE_EXTRA_OPTS: -DVILLAS_COMPILE_WARNING_AS_ERROR=ON
+        CMAKE_EXTRA_OPTS: |
           -DWITH_API=OFF
           -DWITH_CLIENTS=OFF
           -DWITH_CONFIG=OFF
