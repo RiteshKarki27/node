@@ -7,16 +7,10 @@
 
 #pragma once
 
-#include <utility>
-
 namespace villas {
 
 [[noreturn]] inline auto unreachable() -> void {
-#ifdef __cpp_lib_unreachable
-  std::unreachable();
-#elifdef __GNUC__
   __builtin_unreachable();
-#endif
 }
 
 } // namespace villas
