@@ -9,8 +9,6 @@
 
 namespace villas {
 
-[[noreturn]] inline auto unreachable() -> void {
-  __builtin_unreachable();
-}
+[[noreturn]] inline auto unreachable() -> void { __builtin_unreachable(); }
 
 } // namespace villas
