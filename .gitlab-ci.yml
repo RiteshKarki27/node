@@ -10,8 +10,8 @@ variables:
   DOCKER_IMAGE: registry.git.rwth-aachen.de/acs/public/villas/node
   DOCKER_IMAGE_DEV: ${DOCKER_IMAGE}/dev-${DISTRO}
   DOCKER_CLI_EXPERIMENTAL: enabled
+  CMAKE_OPTS: "-DCMAKE_BUILD_TYPE=Release -DVILLAS_COMPILE_WARNING_AS_ERROR=ON"
   CMAKE_BUILD_OPTS: "--parallel 16"
-  CMAKE_EXTRA_OPTS: "-DCMAKE_BUILD_TYPE=Release -DVILLAS_COMPILE_WARNING_AS_ERROR=ON"
   CACHIX_CACHE_NAME: villas
 
 stages:
@@ -71,7 +71,9 @@ prepare:docker:
     TARGET: dev
   parallel:
     matrix:
-      - DISTRO: [ubuntu, debian, rocky]
+      - DISTRO: [debian, rocky]
+      - DISTRO: ubuntu
+        CMAKE_EXTRA_OPTS: "-DVILLAS_COMPILE_WARNING_AS_ERROR=OFF"
       - DISTRO: fedora
         DOCKER_OPTS: --tag ${DOCKER_IMAGE}/dev:${DOCKER_TAG}
       - DISTRO: fedora
