@@ -5,9 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <utility>
-
 #include <villas/signal_type.hpp>
+#include <villas/utility.hpp>
 
 using namespace villas::node;
 
@@ -61,7 +60,7 @@ std::string villas::node::signalTypeToString(enum SignalType fmt) {
     return "invalid";
   }
 
-  std::unreachable();
+  villas::unreachable();
 }
 
 enum SignalType villas::node::signalTypeDetect(const std::string &val) {
