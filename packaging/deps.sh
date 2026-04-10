@@ -603,7 +603,7 @@ if ! cmake --find-package -DNAME=ghc_filesystem -DCOMPILER_ID=GNU -DLANGUAGE=CXX
 fi
 
 # Build and install Apache Arrow with Parquet and Snappy
-if ! cmake --find-package -DNAME=Arrow -DCOMPILER_ID=GNU -DLANGUAGE-CXX -DMODE=EXIST >/dev/null 2>/dev/null && \
+if ! pkg-config "arrow" && \
     should_build "apache-arrow" "for Arrow/Parquet support"; then
     ARROW_TAG=${ARROW_TAG:-apache-arrow-16.1.0}
     ARROW_REPO=${ARROW_REPO:-https://github.com/apache/arrow.git}
@@ -631,7 +631,7 @@ if ! cmake --find-package -DNAME=Arrow -DCOMPILER_ID=GNU -DLANGUAGE-CXX -DMODE=E
     popd
 fi
 
-# Build and install restclient-cpp required for delta_sharing node
+# Build and install restclient-cpp required for delta_sharing node. Package not available in package managers.
 if ! find ${PREFIX}/{lib,lib64} -name "*restclient-cpp*" 2>/dev/null | grep -q . && \
     should_build "restclient-cpp" "for the delta-sharing node-type"; then
     git clone ${GIT_OPTS} --branch 0.5.2 https://github.com/mrtazz/restclient-cpp.git
@@ -645,8 +645,8 @@ if ! find ${PREFIX}/{lib,lib64} -name "*restclient-cpp*" 2>/dev/null | grep -q .
     popd
 fi
 
-# Build and install nlohmann/josn required for delta_sharing node
-if ! find ${PREFIX}/{include,share} -name "*nlohmann*" 2>/dev/null | grep -q . && \
+# Build and install nlohmann/json required for delta_sharing node
+if ! pkg-config "nlohmann_json" && \
     should_build "nlohman_json" "for the delta-sharing node-type"; then
     git clone https://github.com/nlohmann/json.git json
     mkdir -p json/build
