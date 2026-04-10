@@ -29,10 +29,10 @@ class NodeCompat;
 
 struct delta_sharing {
   // Configuration
-  std::string profile_path;
-  std::string cache_dir;
-  std::string table_path;
-  size_t batch_size;
+  std::string profilePath;
+  std::string cacheDir;
+  std::string tablePath;
+  size_t batchSize;
   std::string schema;
   std::string share;
   std::string table;

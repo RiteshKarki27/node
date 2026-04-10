@@ -316,6 +316,7 @@ add_feature_info(WEB                    WITH_WEB                    "Build with 
 add_feature_info(NODE_AMQP              WITH_NODE_AMQP              "Build with amqp node-type")
 add_feature_info(NODE_CAN               WITH_NODE_CAN               "Build with can node-type")
 add_feature_info(NODE_COMEDI            WITH_NODE_COMEDI            "Build with comedi node-type")
+add_feature_info(NODE_DELTASHARING      WITH_NODE_DELTASHARING      "Build with delta-sharing node-type")
 add_feature_info(NODE_ETHERCAT          WITH_NODE_ETHERCAT          "Build with ethercat node-type")
 add_feature_info(NODE_EXAMPLE           WITH_NODE_EXAMPLE           "Build with example node-type")
 add_feature_info(NODE_EXEC              WITH_NODE_EXEC              "Build with exec node-type")
@@ -346,7 +347,6 @@ add_feature_info(NODE_ULDAQ             WITH_NODE_ULDAQ             "Build with 
 add_feature_info(NODE_WEBRTC            WITH_NODE_WEBRTC            "Build with webrtc node-type")
 add_feature_info(NODE_WEBSOCKET         WITH_NODE_WEBSOCKET         "Build with websocket node-type")
 add_feature_info(NODE_ZEROMQ            WITH_NODE_ZEROMQ            "Build with zeromq node-type")
-add_feature_info(NODE_DELTASHARING      WITH_NODE_DELTASHARING      "Build with delta-sharing node-type")
 
 if(TOPLEVEL_PROJECT)
     feature_summary(WHAT ALL VAR FEATURES)

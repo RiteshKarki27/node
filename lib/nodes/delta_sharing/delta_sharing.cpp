@@ -44,9 +44,9 @@ int villas::node::deltaSharing_parse(NodeCompat *n, json_t *json) {
   int ret;
   json_error_t err;
 
-  const char *profile_path = nullptr;
-  const char *cache_dir = nullptr;
-  const char *table_path = nullptr;
+  const char *profilePath = nullptr;
+  const char *cacheDir = nullptr;
+  const char *tablePath = nullptr;
   const char *op = nullptr;
   const char *schema = nullptr;
   const char *share = nullptr;
@@ -56,27 +56,27 @@ int villas::node::deltaSharing_parse(NodeCompat *n, json_t *json) {
   ret = json_unpack_ex(
       json, &err, 0,
       "{ s?: s, s?: s, s?: s, s?: s, s?: s, s?: s, s?: s, s?: i }",
-      "profile_path", &profile_path, "schema", &schema, "share", &share,
-      "table", &table, "cache_dir", &cache_dir, "table_path", &table_path, "op",
-      &op, "batch_size", &batch_size);
+      "profile_path", &profilePath, "schema", &schema, "share", &share, "table",
+      &table, "cache_dir", &cacheDir, "table_path", &tablePath, "op", &op,
+      "batch_size", &batch_size);
 
   if (ret)
     throw ConfigError(json, err, "node-config-node-delta_sharing");
 
-  if (profile_path)
-    d->profile_path = profile_path;
+  if (profilePath)
+    d->profilePath = profilePath;
   if (share)
     d->share = share;
   if (schema)
     d->schema = schema;
   if (table)
     d->table = table;
-  if (cache_dir)
-    d->cache_dir = cache_dir;
-  if (table_path)
-    d->table_path = table_path;
+  if (cacheDir)
+    d->cacheDir = cacheDir;
+  if (tablePath)
+    d->tablePath = tablePath;
   if (batch_size > 0)
-    d->batch_size = static_cast<size_t>(batch_size);
+    d->batchSize = static_cast<size_t>(batch_size);
 
   if (op) {
     if (strcmp(op, OP_READ) == 0)
@@ -94,10 +94,9 @@ char *villas::node::deltaSharing_print(NodeCompat *n) {
   auto *d = n->getData<struct delta_sharing>();
 
   std::string info =
-      std::string("profile_path=") + d->profile_path + ", share =" + d->share +
+      std::string("profile_path=") + d->profilePath + ", share =" + d->share +
       ", schema =" + d->schema + ", table =" + d->table +
-      ", cache_dir=" + d->cache_dir + ", table_path=" + d->table_path +
-      ", op=" +
+      ", cache_dir=" + d->cacheDir + ", table_path=" + d->tablePath + ", op=" +
       (d->table_op == delta_sharing::TableOp::TABLE_READ
            ? OP_READ
            : (d->table_op == delta_sharing::TableOp::TABLE_WRITE ? OP_WRITE
@@ -109,15 +108,15 @@ char *villas::node::deltaSharing_print(NodeCompat *n) {
 int villas::node::deltaSharing_start(NodeCompat *n) {
   auto *d = n->getData<struct delta_sharing>();
 
-  if (d->profile_path.empty())
+  if (d->profilePath.empty())
     throw RuntimeError(
         "'profile_path' must be configured for delta_sharing node");
 
   std::optional<std::string> cache_opt =
-      d->cache_dir.empty() ? std::nullopt
-                           : std::optional<std::string>(d->cache_dir);
+      d->cacheDir.empty() ? std::nullopt
+                          : std::optional<std::string>(d->cacheDir);
 
-  d->client = DeltaSharing::NewDeltaSharingClient(d->profile_path, cache_opt);
+  d->client = DeltaSharing::NewDeltaSharingClient(d->profilePath, cache_opt);
 
   if (!d->client)
     throw RuntimeError("Failed to create Delta Sharing client");
@@ -128,12 +127,10 @@ int villas::node::deltaSharing_start(NodeCompat *n) {
   const auto &shares = *d->shares;
 
   for (const auto &share : shares) {
-    n->logger->info("Listing share {}", share.name);
     d->schemas = d->client->ListSchemas(share, 100, "");
     //List all tables in a share
     d->tables = d->client->ListAllTables(share, 100, "");
     //Check if tables are fetched correctly
-    n->logger->info("Table 1 {}", d->tables->at(0).name);
   }
 
   return 0;
@@ -153,8 +150,8 @@ int villas::node::deltaSharing_init(NodeCompat *n) {
 
   // d->profile_path = "";
   // d->cache_dir = "";
-  // d->table_path = "";
-  d->batch_size = 0;
+  // d->tablePath = "";
+  d->batchSize = 0;
   d->current_row = 0;
 
   d->client.reset();
@@ -162,7 +159,6 @@ int villas::node::deltaSharing_init(NodeCompat *n) {
   d->tables.reset();
   d->shares.reset();
   d->table_op = delta_sharing::TableOp::TABLE_NOOP;
-  n->logger->info("Init for Delta Sharing node");
 
   return 0;
 }
@@ -195,13 +191,13 @@ int villas::node::deltaSharing_read(NodeCompat *n, struct Sample *const smps[],
     return -1;
   }
 
-  if (d->table_path.empty()) {
+  if (d->tablePath.empty()) {
     n->logger->error("No table path configured");
     return -1;
   }
 
   try {
-    auto path = DeltaSharing::ParseURL(d->table_path);
+    auto path = DeltaSharing::ParseURL(d->tablePath);
 
     if (path.size() != 4) {
       n->logger->error(
@@ -240,7 +236,6 @@ int villas::node::deltaSharing_read(NodeCompat *n, struct Sample *const smps[],
 
     auto signals = n->getInputSignals(false);
     if (!signals) {
-      n->logger->error("No input signals configured");
       return -1;
     }
 
@@ -309,10 +304,8 @@ int villas::node::deltaSharing_read(NodeCompat *n, struct Sample *const smps[],
       n->logger->info("End of table reached at row {}", d->current_row);
     }
 
-    n->logger->debug(
-        "Read {} samples from Delta Sharing table (current row: {})",
-        samples_read, d->current_row);
     return samples_read;
+
   } catch (const std::exception &e) {
     n->logger->error("Error reading from Delta Sharing table: {}", e.what());
     return -1;
@@ -329,13 +322,13 @@ int villas::node::deltaSharing_write(NodeCompat *n, struct Sample *const smps[],
     return -1;
   }
 
-  if (d->table_path.empty()) {
+  if (d->tablePath.empty()) {
     n->logger->error("No table path configured");
     return -1;
   }
 
   try {
-    auto path_parts = DeltaSharing::ParseURL(d->table_path);
+    auto path_parts = DeltaSharing::ParseURL(d->tablePath);
     if (path_parts.size() != 4) {
       n->logger->error(
           "Invalid table path format. Expected: server#share.schema.table");
@@ -411,7 +404,6 @@ int villas::node::deltaSharing_write(NodeCompat *n, struct Sample *const smps[],
     // Store the table for potential future use
     d->table_ptr = table;
 
-    n->logger->debug("Wrote {} samples to Delta Sharing table", cnt);
     return cnt;
   } catch (const std::exception &e) {
     n->logger->error("Error writing to Delta Sharing: {}", e.what());

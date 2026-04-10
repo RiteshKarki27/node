@@ -126,15 +126,6 @@ DeltaSharingClient::LoadAsArrowTable(std::string &url) {
     return std::shared_ptr<arrow::Table>();
   }
 
-  /*         auto reader_result = parquet::arrow::OpenFile(infile, arrow::default_memory_pool());
-        if (!reader_result.ok()) {
-          throw std::runtime_error(reader_result.status().ToString());
-        }
-        std::unique_ptr<parquet::arrow::FileReader> reader = std::move(reader_result).ValueOrDie();
-        std::shared_ptr<arrow::Table> table;
-
-        PARQUET_THROW_NOT_OK(reader->ReadTable(&table)); */
-
   std::unique_ptr<parquet::arrow::FileReader> reader;
   PARQUET_THROW_NOT_OK(
       parquet::arrow::OpenFile(infile, arrow::default_memory_pool(), &reader));
@@ -148,19 +139,6 @@ std::shared_ptr<arrow::Table>
 DeltaSharingClient::ReadTableFromCache(std::string &completePath) {
   // To be tested on tables downloaded from cloud
 
-  /* fs::FileSelector selector;
-       selector.base_dir = completePath;
-
-
-       auto filesystem = fs::FileSystemFromUriOrPath(completePath);
-        auto format = std::make_shared<ds::ParquetFileFormat>();
-        auto format = std::make_shared<ds::ParquetFileFormat>();
-       ds::FileSystemFactoryOptions opts;
-
-        ds::FileSystemDatasetFactory
-       ds::FileSystemDatasetFactory f;
-
-       auto factor = ds::FileSystemDatasetFactory::Make(filesystem, selector, NULL, NULL); */
   return std::shared_ptr<arrow::Table>();
 };
 
