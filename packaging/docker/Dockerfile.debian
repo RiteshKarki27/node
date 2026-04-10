@@ -53,8 +53,14 @@ RUN apt-get update && \
 	libusb-1.0-0-dev \
 	libzmq3-dev \
 	uuid-dev \
-    libarrow-dev libarrow-dataset-dev libparquet-dev \
     nlohmann-json3-dev
+
+# Get debian package from Apache for arrow and parquet.
+RUN wget https://packages.apache.org/artifactory/arrow/$(lsb_release --id --short | tr 'A-Z' 'a-z')/apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
+RUN apt-get install -y -V ./apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
+RUN apt-get update && \
+    apt-get install -y \
+    libarrow-dev libarrow-dataset-dev libparquet-dev
 
 # Install unpackaged dependencies from source
 ADD packaging/patches /deps/patches
