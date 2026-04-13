@@ -11,6 +11,7 @@ set(SRCS
     villas-signal
     villas-compare
     villas-test-config
+    villas-chronics
 )
 
 add_executable(villas-node villas-node.cpp)
@@ -72,6 +73,13 @@ if(WITH_NODE_OPAL)
     target_link_libraries(opal-async-param PRIVATE OpalAsyncApi)
 
     list(APPEND SRCS opal-async-param)
+endif()
+
+if(WITH_VILLAS_CHRONICS)
+    add_executable(villas-chronics villas-chronics.cpp)
+    target_link_libraries(villas-chronics PUBLIC villas)
+
+    list(APPEND SRCS villas-chronics)
 endif()
 
 install(
