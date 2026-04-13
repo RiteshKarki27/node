@@ -65,6 +65,7 @@ RUN apt-get update && \
     nlohmann-json3-dev
 
 # Get debian package from Apache for arrow and parquet.
+ARG UBUNTU_CODENAME
 RUN wget https://packages.apache.org/artifactory/arrow/${DISTRO}/apache-arrow-apt-source-latest-${UBUNTU_CODENAME}.deb
 ARG UBUNTU_CODENAME
 RUN apt-get install -y -V ./apache-arrow-apt-source-latest-${UBUNTU_CODENAME}.deb
