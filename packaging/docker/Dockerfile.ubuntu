@@ -66,6 +66,7 @@ RUN apt-get update && \
 
 # Get debian package from Apache for arrow and parquet.
 RUN wget https://packages.apache.org/artifactory/arrow/${DISTRO}/apache-arrow-apt-source-latest-${UBUNTU_CODENAME}.deb
+ARG UBUNTU_CODENAME
 RUN apt-get install -y -V ./apache-arrow-apt-source-latest-${UBUNTU_CODENAME}.deb
 RUN apt-get update && \
     apt-get install -y \
