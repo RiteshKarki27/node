@@ -58,9 +58,7 @@ RUN apt-get update && \
 	libssl-dev:${ARCH} \
 	libusb-1.0-0-dev:${ARCH} \
 	libzmq3-dev:${ARCH} \
-	uuid-dev:${ARCH} \
-    nlohmann-json3-dev:${ARCH} \
-    libbz2:${ARCH}
+	uuid-dev:${ARCH}
 
 ADD cmake/toolchains/debian-${ARCH}.cmake /
 
@@ -151,7 +149,9 @@ RUN apt-get update && \
 	libusb-1.0-0:${ARCH} \
 	liblua5.3-0:${ARCH} \
 	libhiredis0.14:${ARCH} \
-	libmodbus5:${ARCH} && \
+	libmodbus5:${ARCH} \
+    nlohmann-json3-dev:${ARCH} \
+    libbz2-dev:${ARCH} && \
 	rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder ${PREFIX} ${PREFIX}
