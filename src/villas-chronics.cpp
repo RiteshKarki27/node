@@ -55,7 +55,8 @@ static void parse_table(const nlohmann::json &table_df,
   const auto &cols = load_df.at("columns");
   auto it = std::find(cols.begin(), cols.end(), "bus");
   if (it == cols.end()) {
-    throw std::runtime_error("loaded dataframe does not contain a 'bus' column");
+    throw std::runtime_error(
+        "loaded dataframe does not contain a 'bus' column");
   }
   const size_t bus_col = static_cast<size_t>(std::distance(cols.begin(), it));
 
