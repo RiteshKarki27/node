@@ -1,3 +1,9 @@
+/* Executable to generate chronics for OpenDSS
+ *
+ * Author: Ritesh Karki <ritesh.karki@rwth-aachen.de>
+ * SPDX-FileCopyrightText: 2014-2026 Institute for Automation of Complex Power Systems, RWTH Aachen University
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -13,9 +19,8 @@
 #include <utility>
 #include <vector>
 
-#include <unistd.h>
-
 #include <nlohmann/json.hpp>
+#include <unistd.h>
 
 #include <villas/log.hpp>
 #include <villas/tool.hpp>
@@ -41,8 +46,8 @@ static double round_dec(double value, unsigned decimals) {
 }
 
 static void parse_table(const nlohmann::json &table_df,
-                         std::unordered_map<int, int> &target,
-                         const std::string &col) {
+                        std::unordered_map<int, int> &target,
+                        const std::string &col) {
   const nlohmann::json &load = table_df.at("_object").at(col);
   const std::string load_obj_str = load.at("_object").get<std::string>();
   nlohmann::json load_df = nlohmann::json::parse(load_obj_str);
@@ -50,11 +55,9 @@ static void parse_table(const nlohmann::json &table_df,
   const auto &cols = load_df.at("columns");
   auto it = std::find(cols.begin(), cols.end(), "bus");
   if (it == cols.end()) {
-    throw std::runtime_error(
-        "load dataframe does not contain a 'bus' column");
+    throw std::runtime_error("loaded dataframe does not contain a 'bus' column");
   }
-  const size_t bus_col =
-      static_cast<size_t>(std::distance(cols.begin(), it));
+  const size_t bus_col = static_cast<size_t>(std::distance(cols.begin(), it));
 
   const auto &idxs = load_df.at("index");
   const auto &rows = load_df.at("data");
@@ -93,8 +96,8 @@ glob_sorted(const std::filesystem::path &dir, const std::string &prefix) {
 }
 
 static size_t find_column_index(const std::vector<std::string> &columns,
-                                 const std::string &name,
-                                 const std::filesystem::path &path) {
+                                const std::string &name,
+                                const std::filesystem::path &path) {
   auto it = std::find(columns.begin(), columns.end(), name);
   if (it == columns.end())
     throw std::runtime_error("Column " + name + " missing in " + path.string());
@@ -153,8 +156,8 @@ load_pq_series_csv(const std::filesystem::path &path) {
 }
 
 static void write_csv(const std::filesystem::path &path,
-                       const std::string &header,
-                       const std::vector<std::vector<double>> &columns) {
+                      const std::string &header,
+                      const std::vector<std::vector<double>> &columns) {
   std::ofstream out(path);
   if (!out) {
     throw std::runtime_error("Cannot open output file: " + path.string());
@@ -338,8 +341,8 @@ private:
 
       const int bus_id = it->second;
       const size_t col_idx = load_p_columns.size() - 1;
-      const std::string col_name = "load_" + std::to_string(bus_id) + "_" +
-                                     std::to_string(col_idx);
+      const std::string col_name =
+          "load_" + std::to_string(bus_id) + "_" + std::to_string(col_idx);
 
       if (!load_col_names.empty())
         load_col_names += ';';
@@ -352,16 +355,16 @@ private:
       const int element_index = extract_file_number(file);
       auto it = mapping.sgen_bus.find(element_index);
       if (it == mapping.sgen_bus.end())
-        throw std::runtime_error(
-            "SGen index missing in grid mapping: " +
-            std::to_string(element_index));
+        throw std::runtime_error("SGen index missing in grid mapping: " +
+                                 std::to_string(element_index));
 
       const auto [p_norm, q_norm] = load_pq_series_csv(file);
       const int bus_id = it->second;
 
       prod_p_columns.push_back(p_norm);
       prod_q_columns.push_back(q_norm);
-      prod_v_columns.push_back(std::vector<double>(p_norm.size(), options.voltage));
+      prod_v_columns.push_back(
+          std::vector<double>(p_norm.size(), options.voltage));
 
       const std::string col_name =
           "sgen_" + std::to_string(bus_id) + "_" + std::to_string(sgen_idx);
@@ -374,7 +377,7 @@ private:
   }
 
   void round_values() {
-     for (auto &col : load_p_columns)
+    for (auto &col : load_p_columns)
       for (double &v : col)
         v = round_dec(v, options.round_decimals);
 
