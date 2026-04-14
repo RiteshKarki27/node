@@ -149,9 +149,12 @@ RUN apt-get update && \
 	libusb-1.0-0:${ARCH} \
 	liblua5.3-0:${ARCH} \
 	libhiredis0.14:${ARCH} \
-	libmodbus5:${ARCH} \
-    nlohmann-json3-dev:${ARCH} \
-    libbz2-dev:${ARCH} && \
+	libmodbus5:${ARCH} && \
+	rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y \
+	libbz2-dev \
+	nlohmann-json3-dev && \
 	rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder ${PREFIX} ${PREFIX}
