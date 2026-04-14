@@ -1,9 +1,3 @@
-/* Executable to generate chronics for OpenDSS
- *
- * Author: Ritesh Karki <ritesh.karki@rwth-aachen.de>
- * SPDX-FileCopyrightText: 2014-2026 Institute for Automation of Complex Power Systems, RWTH Aachen University
- * SPDX-License-Identifier: Apache-2.0
- */
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -19,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include <bzlib.h>
 #include <nlohmann/json.hpp>
 #include <unistd.h>
 
@@ -55,8 +50,7 @@ static void parse_table(const nlohmann::json &table_df,
   const auto &cols = load_df.at("columns");
   auto it = std::find(cols.begin(), cols.end(), "bus");
   if (it == cols.end()) {
-    throw std::runtime_error(
-        "loaded dataframe does not contain a 'bus' column");
+    throw std::runtime_error("load dataframe does not contain a 'bus' column");
   }
   const size_t bus_col = static_cast<size_t>(std::distance(cols.begin(), it));
 
@@ -174,6 +168,59 @@ static void write_csv(const std::filesystem::path &path,
       out << columns[c][r];
     }
     out << '\n';
+  }
+}
+
+static void bz2_write_all(BZFILE *bzf, const std::string &s) {
+  int err = BZ_OK;
+  BZ2_bzWrite(&err, bzf, const_cast<char *>(s.data()),
+              static_cast<int>(s.size()));
+  if (err != BZ_OK)
+    throw std::runtime_error("BZ2_bzWrite failed");
+}
+
+static void write_bz2(const std::filesystem::path &path,
+                      const std::string &header,
+                      const std::vector<std::vector<double>> &columns) {
+  FILE *fp = std::fopen(path.string().c_str(), "wb");
+  if (!fp)
+    throw std::runtime_error("Cannot open output file: " + path.string());
+
+  int err = BZ_OK;
+  BZFILE *bzf = BZ2_bzWriteOpen(&err, fp, 9, 0, 30);
+  if (!bzf || err != BZ_OK) {
+    std::fclose(fp);
+    throw std::runtime_error("BZ2_bzWriteOpen failed");
+  }
+
+  try {
+    bz2_write_all(bzf, header);
+    bz2_write_all(bzf, "\n");
+
+    const size_t rows = columns.empty() ? 0 : columns.front().size();
+    for (size_t r = 0; r < rows; ++r) {
+      std::ostringstream line;
+      for (size_t c = 0; c < columns.size(); ++c) {
+        if (c)
+          line << ';';
+        line << columns[c][r];
+      }
+      line << '\n';
+      bz2_write_all(bzf, line.str());
+    }
+
+    unsigned int nbytes_in = 0, nbytes_out = 0;
+    BZ2_bzWriteClose(&err, bzf, 0, &nbytes_in, &nbytes_out);
+    bzf = nullptr;
+    std::fclose(fp);
+    if (err != BZ_OK)
+      throw std::runtime_error("BZ2_bzWriteClose failed");
+  } catch (...) {
+    int dummy = BZ_OK;
+    if (bzf)
+      BZ2_bzWriteClose(&dummy, bzf, 1, nullptr, nullptr);
+    std::fclose(fp);
+    throw;
   }
 }
 
@@ -390,17 +437,31 @@ private:
   void write_outputs() {
     std::filesystem::create_directories(options.output_dir);
 
-    write_csv(options.output_dir / "load_p.csv", load_col_names,
-              load_p_columns);
-    write_csv(options.output_dir / "load_q.csv", load_col_names,
-              load_q_columns);
+    if (!options.compress) {
+      write_csv(options.output_dir / "load_p.csv", load_col_names,
+                load_p_columns);
+      write_csv(options.output_dir / "load_q.csv", load_col_names,
+                load_q_columns);
 
-    write_csv(options.output_dir / "prod_p.csv", sgen_col_names,
-              prod_p_columns);
-    write_csv(options.output_dir / "prod_q.csv", sgen_col_names,
-              prod_q_columns);
-    write_csv(options.output_dir / "prod_v.csv", sgen_col_names,
-              prod_v_columns);
+      write_csv(options.output_dir / "prod_p.csv", sgen_col_names,
+                prod_p_columns);
+      write_csv(options.output_dir / "prod_q.csv", sgen_col_names,
+                prod_q_columns);
+      write_csv(options.output_dir / "prod_v.csv", sgen_col_names,
+                prod_v_columns);
+    } else {
+      write_bz2(options.output_dir / "load_p.csv.bz2", load_col_names,
+                load_p_columns);
+      write_bz2(options.output_dir / "load_q.csv.bz2", load_col_names,
+                load_q_columns);
+
+      write_bz2(options.output_dir / "prod_p.csv.bz2", sgen_col_names,
+                prod_p_columns);
+      write_bz2(options.output_dir / "prod_q.csv.bz2", sgen_col_names,
+                prod_q_columns);
+      write_bz2(options.output_dir / "prod_v.csv.bz2", sgen_col_names,
+                prod_v_columns);
+    }
   }
 };
 
