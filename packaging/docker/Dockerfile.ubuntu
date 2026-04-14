@@ -61,7 +61,7 @@ RUN apt-get update && \
 	libzmq3-dev \
 	uuid-dev \
     libbz2-dev \
-    nlohmann-json-dev
+    nlohmann-json3-dev
 
 # Install unpackaged dependencies from source
 ADD packaging/patches /deps/patches
