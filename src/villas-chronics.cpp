@@ -1,4 +1,4 @@
-/* Create chronics files for OpenDSS
+/* Create chronics files for OpenDSS.
  *
  * Author: Ritesh Karki <ritesh.karki@rwth-aachen.de>
  * SPDX-FileCopyrightText: 2014-2026 Institute for Automation of Complex Power Systems, RWTH Aachen University
