@@ -602,7 +602,7 @@ if ! cmake --find-package -DNAME=ghc_filesystem -DCOMPILER_ID=GNU -DLANGUAGE=CXX
     popd
 fi
 
-# Build and install nlohmann/josn required for villas-chronics
+# Build and install nlohmann/json required for villas-chronics
 if ! pkg-config "nlohmann_json" &&
     should_build "nlohman_json" "for the delta-sharing node-type"; then
     git clone https://github.com/nlohmann/json.git json
