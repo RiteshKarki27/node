@@ -11,7 +11,6 @@ set(SRCS
     villas-signal
     villas-compare
     villas-test-config
-    villas-chronics
 )
 
 add_executable(villas-node villas-node.cpp)
