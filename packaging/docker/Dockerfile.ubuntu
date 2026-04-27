@@ -62,9 +62,9 @@ RUN apt-get update && \
 	libwebsockets-dev \
 	libzmq3-dev \
 	uuid-dev \
-    nlohmann-json3-dev
+	nlohmann-json3-dev
 
-# Get debian package from Apache for arrow and parquet.
+# Get debian package from Apache for arrow and parquet from official apache repositories.
 ARG UBUNTU_CODENAME
 RUN wget https://packages.apache.org/artifactory/arrow/${DISTRO}/apache-arrow-apt-source-latest-${UBUNTU_CODENAME}.deb
 ARG UBUNTU_CODENAME

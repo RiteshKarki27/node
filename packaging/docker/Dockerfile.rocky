@@ -54,7 +54,9 @@ RUN dnf -y install \
 	libnice-devel \
 	libre-devel \
 	libwebsockets-devel \
-    libarrow-devel libarrow-dataset-devel parquet-libs-devel \
+	libarrow-devel \
+	libarrow-dataset-devel \
+	parquet-libs-devel \
     json-devel
 
 # Install unpackaged dependencies from source
