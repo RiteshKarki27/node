@@ -25,9 +25,6 @@ RUN dnf -y install \
 	spdlog-devel \
 	fmt-devel \
 	libwebsockets-devel \
-	libarrow-devel \
-	libarrow-dataset-devel \
-	parquet-libs-devel \
     json-devel
 
 ENV LC_ALL=C.UTF-8

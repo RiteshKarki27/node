@@ -607,7 +607,7 @@ fi
 # Build and install Apache Arrow with Parquet and Snappy
 if ! pkg-config "arrow" &&
 	should_build "arrow" "for Arrow/Parquet support"; then
-	ARROW_TAG=${ARROW_TAG:-apache-arrow-16.1.0}
+	ARROW_TAG=${ARROW_TAG:-maint-24.0.0}
 	ARROW_REPO=${ARROW_REPO:-https://github.com/apache/arrow.git}
 	git clone ${GIT_OPTS} --branch ${ARROW_TAG} ${ARROW_REPO} apache-arrow
 	mkdir -p apache-arrow/cpp/build

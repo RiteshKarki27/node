@@ -65,9 +65,6 @@ RUN dnf -y install \
 	protobuf-devel \
 	spdlog-devel \
 	zeromq-devel \
-	libarrow-devel \
-	libarrow-dataset-devel \
-	parquet-libs-devel \
     json-devel
 
 # Install unpackaged dependencies from source

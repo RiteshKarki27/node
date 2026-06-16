@@ -49,9 +49,6 @@ RUN dnf -y install \
 	hiredis-devel \
 	libnice-devel \
 	libmodbus-devel \
-	libarrow-devel \
-	libarrow-dataset-devel \
-	parquet-libs-devel \
     json-devel
 
 # Install unpackaged dependencies from source

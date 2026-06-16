@@ -126,11 +126,11 @@ DeltaSharingClient::LoadAsArrowTable(std::string &url) {
     return std::shared_ptr<arrow::Table>();
   }
 
-  std::unique_ptr<parquet::arrow::FileReader> reader;
-  PARQUET_THROW_NOT_OK(
-      parquet::arrow::OpenFile(infile, arrow::default_memory_pool(), &reader));
-  std::shared_ptr<arrow::Table> table;
-  PARQUET_THROW_NOT_OK(reader->ReadTable(&table));
+  PARQUET_ASSIGN_OR_THROW(
+      std::unique_ptr<parquet::arrow::FileReader> reader,
+      parquet::arrow::OpenFile(infile, arrow::default_memory_pool()));
+  PARQUET_ASSIGN_OR_THROW(std::shared_ptr<arrow::Table> table,
+                          reader->ReadTable());
 
   return table;
 };
