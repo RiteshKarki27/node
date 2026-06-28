@@ -1,0 +1,308 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+env:
+  REGISTRY: ghcr.io
+  DOCKER_IMAGE: ghcr.io/${{ github.repository_owner }}/villas/node
+  CMAKE_BUILD_OPTS: --parallel 16
+  CMAKE_EXTRA_OPTS: -DCMAKE_BUILD_TYPE=Release
+  CACHIX_CACHE_NAME: villas
+
+jobs:
+  # --- Stage: prepare ---
+  prepare-docker:
+    name: "prepare:docker [${{ matrix.name }}]"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - distro: ubuntu
+            docker_file: packaging/docker/Dockerfile.ubuntu
+            name: ubuntu
+          - distro: debian
+            docker_file: packaging/docker/Dockerfile.debian
+            name: debian
+          - distro: rocky
+            docker_file: packaging/docker/Dockerfile.rocky
+            name: rocky
+          - distro: rocky9
+            docker_file: packaging/docker/Dockerfile.rocky9
+            name: rocky9
+          - distro: fedora
+            docker_file: packaging/docker/Dockerfile.fedora
+            name: fedora
+          - distro: fedora
+            docker_file: packaging/docker/Dockerfile.fedora-minimal
+            name: fedora-minimal
+            image_suffix: -fedora-minimal
+          - distro: fedora
+            docker_file: packaging/docker/Dockerfile.fedora
+            target: dev-vscode
+            name: fedora-vscode
+            image_suffix: -vscode
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.docker_file }}
+          target: ${{ matrix.target || 'dev' }}
+          push: ${{ github.event_name == 'push' }}
+          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/villas/node/dev${{ matrix.image_suffix || '' }}:${{ github.ref_name }}
+
+  # --- Stage: build ---
+  build-source-fedora:
+    name: "build:source [fedora]"
+    needs: [prepare-docker]
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.REGISTRY }}/${{ github.repository_owner }}/villas/node/dev:${{ github.ref_name }}
+      options: --user root
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - name: Configure
+        run: cmake -S . -B build ${{ env.CMAKE_EXTRA_OPTS }}
+      - name: Build
+        run: cmake --build build ${{ env.CMAKE_BUILD_OPTS }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-fedora
+          path: build/
+          retention-days: 7
+
+  build-source:
+    name: "build:source [${{ matrix.distro }}]"
+    needs: [prepare-docker]
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.REGISTRY }}/${{ github.repository_owner }}/villas/node/dev${{ matrix.image_suffix || '' }}:${{ github.ref_name }}
+      options: --user root
+    strategy:
+      matrix:
+        include:
+          - distro: fedora-minimal
+            image_suffix: -fedora-minimal
+            cmake_extra_opts: >
+              -DVILLAS_COMPILE_WARNING_AS_ERROR=ON
+              -DWITH_API=OFF
+              -DWITH_CLIENTS=OFF
+              -DWITH_CONFIG=OFF
+              -DWITH_DOC=OFF
+              -DWITH_FPGA=OFF
+              -DWITH_GRAPHVIZ=OFF
+              -DWITH_HOOKS=OFF
+              -DWITH_LUA=OFF
+              -DWITH_OPENMP=OFF
+              -DWITH_PLUGINS=OFF
+              -DWITH_SRC=OFF
+              -DWITH_TESTS=OFF
+              -DWITH_TOOLS=OFF
+              -DWITH_WEB=OFF
+              -DCMAKE_MODULE_PATH=/usr/local/lib64/cmake
+              -DCMAKE_PREFIX_PATH=/usr/local
+          - distro: debian
+            image_suffix: ''
+          - distro: rocky
+            image_suffix: ''
+          - distro: rocky9
+            image_suffix: ''
+          - distro: ubuntu
+            image_suffix: ''
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - name: Configure
+        run: cmake -S . -B build $CMAKE_EXTRA_OPTS ${{ matrix.cmake_extra_opts || env.CMAKE_EXTRA_OPTS }}
+      - name: Build
+        run: cmake --build build ${{ env.CMAKE_BUILD_OPTS }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.distro }}
+          path: build/
+          retention-days: 7
+
+  build-nix:
+    name: "build:nix [${{ matrix.system }}]"
+    runs-on: ubuntu-latest
+    container:
+      image: docker.nix-community.org/nixpkgs/cachix-flakes
+    strategy:
+      matrix:
+        system: [x86_64-linux, aarch64-linux]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - name: Configure Cachix
+        run: cachix use "${{ env.CACHIX_CACHE_NAME }}"
+      - name: Build
+        run: |
+          cachix watch-exec $CACHIX_CACHE_NAME -- \
+            nix build --print-build-logs ".#villas-node-${{ matrix.system }}"
+
+  build-openapi:
+    name: build:openapi
+    runs-on: ubuntu-latest
+    container:
+      image: node:24-alpine
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint OpenAPI spec
+        run: npx -y @redocly/cli lint --config doc/redocly.yaml doc/openapi/openapi.yaml
+      - name: Build OpenAPI docs
+        run: npx -y @redocly/cli build-docs --config doc/redocly.yaml doc/openapi/openapi.yaml --output openapi.html
+      - uses: actions/upload-artifact@v4
+        with:
+          name: openapi
+          path: openapi.html
+
+  # --- Stage: test ---
+  test-pre-commit:
+    name: test:pre-commit
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.12.10-slim-bookworm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          apt-get update && apt-get -y install git ruby
+          pip install pre-commit
+      - name: Run pre-commit
+        run: pre-commit run --all-files
+
+  test-python:
+    name: test:python
+    needs: [build-source-fedora]
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.REGISTRY }}/${{ github.repository_owner }}/villas/node/dev:${{ github.ref_name }}
+      options: --user root
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - name: Run Python tests
+        run: |
+          cd python
+          pytest --verbose .
+      - name: Check formatting
+        run: |
+          cd python
+          black --line-length=90 --extend-exclude=".*(\.pyi|_pb2.py)$" --check .
+      - name: Lint with flake8
+        run: |
+          cd python
+          flake8 --max-line-length=90 --extend-exclude="*.pyi,*_pb2.py" .
+      - name: Type check with mypy
+        run: |
+          cd python
+          mypy --namespace-packages --explicit-package-bases .
+
+  test-cppcheck:
+    name: test:cppcheck
+    needs: [build-source-fedora]
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.REGISTRY }}/${{ github.repository_owner }}/villas/node/dev:${{ github.ref_name }}
+      options: --user root
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - name: Run cppcheck
+        run: ./tools/run-cppcheck.sh | tee cppcheck.log
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cppcheck-log
+          path: cppcheck.log
+
+  test-unit:
+    name: test:unit
+    needs: [build-source-fedora]
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.REGISTRY }}/${{ github.repository_owner }}/villas/node/dev:${{ github.ref_name }}
+      options: --user root
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-fedora
+      - name: Configure
+        run: cmake -S . -B build ${{ env.CMAKE_EXTRA_OPTS }}
+      - name: Build and run unit tests
+        run: cmake --build build ${{ env.CMAKE_BUILD_OPTS }} --target run-unit-tests run-unit-tests-common
+
+  test-integration:
+    name: test:integration
+    needs: [build-source-fedora]
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.REGISTRY }}/${{ github.repository_owner }}/villas/node/dev:${{ github.ref_name }}
+      options: --user root
+    services:
+      mosquitto:
+        image: eclipse-mosquitto:2.0
+        options: --entrypoint mosquitto
+        cmd: ["-c", "/mosquitto-no-auth.conf"]
+      rabbitmq:
+        image: rwthacs/rabbitmq
+      redis:
+        image: redis:6.2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-fedora
+      - name: Configure
+        run: cmake -S . -B build ${{ env.CMAKE_EXTRA_OPTS }}
+      - name: Build and run integration tests
+        run: cmake --build build ${{ env.CMAKE_BUILD_OPTS }} --target run-integration-tests
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-tests
+          path: build/tests/integration/
+
+  test-reuse:
+    name: test:reuse
+    runs-on: ubuntu-latest
+    container:
+      image: fsfe/reuse:latest
+      options: --entrypoint ""
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run REUSE lint
+        run: reuse lint
