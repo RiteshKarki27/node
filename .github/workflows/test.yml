@@ -8,6 +8,7 @@ on:
 
 env:
   CMAKE_BUILD_OPTS: --parallel 16
+  CMAKE_OPTS:  -Wno-dev -G=Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX}
 
 permissions:
   contents: read
@@ -131,11 +132,10 @@ jobs:
           mosquitto -c /tmp/mosquitto.conf -d
 
       - name: Configure
-        run: cmake -S . -B build
+        run: cmake -S . -B build ${{ env.CMAKE_OPTS }}
 
       - name: Build and run integration tests
         run: cmake --build build ${{ env.CMAKE_BUILD_OPTS }} --target run-integration-tests
-
       - uses: actions/upload-artifact@v4
         if: always()
         with:
