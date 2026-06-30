@@ -37,6 +37,7 @@ jobs:
 
       - name: Run pre-commit
         run: |
+          git version
           pre-commit run --all-files
           cat /github/home/.cache/pre-commit/pre-commit.log
 
