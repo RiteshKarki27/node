@@ -27,13 +27,23 @@ jobs:
       - name: Install dependencies
         run: |
           apt-get update && apt-get -y install git ruby
-          PIP_CACHE_DIR=/tmp/pip-cache pip install pre-commit
+          pip install pre-commit
 
       # - name: Add Git safe directory
       #   run: git config --global --add safe.directory '*'
 
       - name: Run pre-commit
-        run: pre-commit run --all-files
+        run: |
+          pre-commit run --all-files
+          cat /github/home/.cache/pre-commit/pre-commit.log
+
+
+      - name: Upload log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+        name: pre-commit-log
+        path: /github/home/.cache/pre-commit/pre-commit.log
 
   test-python:
     name: test:python
