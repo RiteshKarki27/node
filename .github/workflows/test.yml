@@ -147,7 +147,9 @@ jobs:
           mosquitto -c /tmp/mosquitto.conf -d
 
       - name: Configure
-        run: cmake -S . -B build ${{ env.CMAKE_OPTS }}
+        run: |
+            cmake -S . -B build ${{ env.CMAKE_OPTS }}
+            cmake -B build --target install
 
       - name: Build and run integration tests
         # run: cmake --build build ${{ env.CMAKE_BUILD_OPTS }} --target run-integration-tests
