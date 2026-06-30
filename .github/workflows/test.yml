@@ -22,6 +22,9 @@ jobs:
       image: python:3.12.10-slim-bookworm
       options: --user root
     steps:
+      - name: Install git
+        run: apt-get update && apt-get -y install git ruby
+
       - uses: actions/checkout@v4
 
       - name: Install dependencies
