@@ -20,8 +20,8 @@ jobs:
     name: "build:source [${{ matrix.distro }}]"
     runs-on: ubuntu-latest
     container:
-        image: ghcr.io/${{ github.repository_owner }}/villas/node/dev-${{ matrix.image_name }}:${{ github.sha }}
-        options: --user root
+      image: ghcr.io/villasframework/villas/node/dev-${{ matrix.image_name }}:${{ github.sha }}
+      options: --user root
     strategy:
       fail-fast: false
       matrix:
@@ -79,7 +79,7 @@ jobs:
     name: "build:nix [${{ matrix.system }}]"
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/nixos/nix:2.28.5
+      image: ghcr.io/nixos/nix:2.28.4
       options: --user root
     strategy:
       fail-fast: false
