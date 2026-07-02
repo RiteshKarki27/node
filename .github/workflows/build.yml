@@ -21,6 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/villasframework/villas/node/dev-${{ matrix.image_name }}:${{ github.sha }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
       options: --user root
     strategy:
       fail-fast: false
@@ -79,7 +82,7 @@ jobs:
     name: "build:nix [${{ matrix.system }}]"
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/nixos/nix:2.28.4
+      image: docker.nix-community.org/nixpkgs/cachix-flakes
       options: --user root
     strategy:
       fail-fast: false
